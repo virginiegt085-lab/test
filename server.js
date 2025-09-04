@@ -1,18 +1,22 @@
 const express = require("express");
 const Stripe = require("stripe");
+const cors = require("cors");
 const app = express();
 
-const stripe = Stripe(process.env.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);
-
+app.use(cors());                // Autorise toutes les origines
 app.use(express.json());
 
+// Récupère la clé Stripe via une variable d'environnement
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Endpoint pour créer une empreinte bancaire
 app.post("/create-intent", async (req, res) => {
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 6000, // 100 € en centimes
+      amount: 6000, // 100,00 € en centimes
       currency: "eur",
-      capture_method: "manual", // 👉 empreinte CB
-      payment_method_types: ["card"],
+      capture_method: "manual", // 👉 empreinte bancaire
+      payment_method_types: ["card"]
     });
     res.json({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
@@ -20,7 +24,9 @@ app.post("/create-intent", async (req, res) => {
   }
 });
 
+// Endpoint de test
 app.get("/", (req, res) => res.send("✅ API Stripe fonctionne !"));
 
-const PORT = process.env.PORT || 3000; // ⚠️ important sur Render
+// Render impose d'écouter sur process.env.PORT
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
