@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Réservation Virginie Cooking</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fafafa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 400px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+    .field {
+      margin: 15px 0;
+      text-align: left;
+    }
+    label {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 5px;
+      display: block;
+    }
+    #card-number, #card-expiry, #card-cvc {
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    button {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+    button:hover {
+      background: #e65c00;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Réservez votre prestation</h2>
+    <p>Votre carte sera enregistrée comme empreinte bancaire.<br>
+    Aucun débit immédiat, vous serez prélevé uniquement en cas d’annulation selon nos CGS.</p>
+
+    <form id="payment-form">
+      <div class="field">
+        <label for="card-number">Numéro de carte</label>
+        <div id="card-number"></div>
+      </div>
+      <div class="field">
+        <label for="card-expiry">Date d’expiration</label>
+        <div id="card-expiry"></div>
+      </div>
+      <div class="field">
+        <label for="card-cvc">CVC</label>
+        <div id="card-cvc"></div>
+      </div>
+      <button type="submit">Réserver</button>
+    </form>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    // 1️⃣ Votre clé publique Stripe (pk_test_... ou pk_live_...)
+    const stripe = Stripe("pk_live_51S2fuWAhc7nUtYtUeEUztN0gBJx3TfD9uff6UIEqk37mfMIhzwDsZn8mwSvDzD30r3wrXZtb829PsWVTjIgzd7Jt00tassu9V5");
+
+    // 2️⃣ Votre URL Render (remplacez par votre vraie URL)
+    const API_URL = "https://test-1-71p6.onrender.com";
+
+    const elements = stripe.elements();
+    const cardNumber = elements.create("cardNumber");
+    cardNumber.mount("#card-number");
+
+    const cardExpiry = elements.create("cardExpiry");
+    cardExpiry.mount("#card-expiry");
+
+    const cardCvc = elements.create("cardCvc");
+    cardCvc.mount("#card-cvc");
+
+    const form = document.getElementById("payment-form");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      message.innerText = "⏳ Enregistrement en cours...";
+
+      // Appel à Render -> Stripe (empreinte CB)
+      const response = await fetch(API_URL, { method: "POST" });
+      const data = await response.json();
+
+      const result = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: {
+          card: cardNumber
+        }
+      });
+
+      if (result.error) {
+        message.style.color = "red";
+        message.innerText = "❌ Erreur : " + result.error.message;
+      } else if (result.paymentIntent.status === "requires_capture") {
+        message.style.color = "green";
+        message.innerText = "✅ Empreinte bancaire enregistrée avec succès !";
+      }
+    });
+  </script>
+</body>
+</html>
