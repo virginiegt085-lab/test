@@ -2,14 +2,14 @@ const express = require("express");
 const Stripe = require("stripe");
 const app = express();
 
-const stripe = Stripe(process.env.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); // clé secrète via variable d'env
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 app.use(express.json());
 
 app.post("/create-intent", async (req, res) => {
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 6000, // en centimes => 100,00 €
+      amount: 6000, // 100 € en centimes
       currency: "eur",
       capture_method: "manual", // 👉 empreinte CB
       payment_method_types: ["card"],
@@ -20,6 +20,7 @@ app.post("/create-intent", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => res.send("API Stripe OK"));
+app.get("/", (req, res) => res.send("✅ API Stripe fonctionne !"));
 
-app.listen(6000, () => console.log("Server running on port 10000"));
+const PORT = process.env.PORT || 3000; // ⚠️ important sur Render
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
